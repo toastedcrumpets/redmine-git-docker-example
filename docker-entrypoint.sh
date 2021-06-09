@@ -2,8 +2,34 @@
 set -Eeo pipefail
 # TODO add "-u"
 
-#Start sshd
-/usr/sbin/sshd
+echo "Running as "`whoami`
+
+#First execution of this script is as root, later its rerun as redmine
+if [ "$(id -u)" = '0' ];  then
+    #Generate host keys (if needed)
+    ssh-keygen -A
+
+    #Start sshd
+    /usr/sbin/sshd
+else
+    #Make sure the ssh host is trusted in advance, as the confirmation
+    #dialogue breaks git hosting plugin
+    echo /etc/ssh/*.pub > /home/redmine/.ssh/known_hosts
+
+    #Make sure we have a ssh key for the redmine user stored somewhere permanent
+    sshkey=/usr/src/redmine/files/id_rsa
+    if [ ! -f $sshkey ]; then
+	#No key! create it
+	ssh-keygen -m PEM -N '' -f $sshkey
+	echo "Setting up gitolite"
+	sudo -u git HOME=/home/git USER=git gitolite setup -pk $sshkey.pub
+    fi
+
+    #We copy this key over to where redmine git hosting expects it
+    redmine_sshkey=/usr/src/redmine/plugins/redmine_git_hosting/ssh_keys/redmine_gitolite_admin_id_rsa
+    cp $sshkey $redmine_sshkey
+    cp $sshkey.pub $redmine_sshkey.pub
+fi
 
 # usage: file_env VAR [DEFAULT]
 #    ie: file_env 'XYZ_DB_PASSWORD' 'example'

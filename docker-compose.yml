@@ -1,31 +1,26 @@
 version: '3.7'
 
 volumes:
-  postgres_data: {}
   git_repos: {}
   redmine_files: {}
   
 services:
-  db:
-    image: postgres:alpine
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    environment:
-      - POSTGRES_DB=redmine
-      - POSTGRES_USER=redmine
-      - POSTGRES_PASSWORD=picksomethingyourselfandhideit
   redmine:
     build: .
+    restart: always
     depends_on:
       - db
     volumes:
       - git_repos:/home/git
       - redmine_files:/usr/src/redmine/files
     environment:
-      - REDMINE_DB_POSTGRES=db
-      - REDMINE_DB_PORT=5432
-      - REDMINE_DB_USERNAME=redmine
-      - REDMINE_DB_PASSWORD=picksomethingyourselfandhideit
+      REDMINE_DB_MYSQL: db
+      REDMINE_DB_PASSWORD: example
+      REDMINE_SECRET_KEY_BASE: supersecretkey
+      #We migrate plugins every restart, this must be true at least
+      #the first time the container is spun up (with a working
+      #database connection)
+      REDMINE_PLUGINS_MIGRATE: 1
     ports:
       - target: 22
         published: 2222
@@ -35,3 +30,10 @@ services:
         published: 8080
         protocol: tcp
         mode: host
+
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: redmine
