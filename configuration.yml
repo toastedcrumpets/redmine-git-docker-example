@@ -1,0 +1,17 @@
+# specific configuration options for development environment
+# that overrides the default ones
+development:
+  
+# specific configuration options for production environment
+# that overrides the default ones
+production:
+  delivery_method: :smtp
+  smtp_settings:
+    tls: true
+    enable_starttls_auto: true
+    address: "smtp.sendgrid.net"
+    port: 465
+    authentication: :plain
+    domain: "my.domain.com"
+    user_name: "apikey"
+    password: "GETYOUROWN"
